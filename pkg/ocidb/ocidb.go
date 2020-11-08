@@ -2,15 +2,20 @@ package ocidb
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/deislabs/oras/pkg/content"
 	"github.com/deislabs/oras/pkg/oras"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/ocidb/ocidb/pkg/ocidb/types"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
@@ -30,12 +35,20 @@ func Connect(ctx context.Context, connectOpts *types.ConnectOpts) (*types.Connec
 
 	fileStore := content.NewFileStore(connection.LocalCacheDir)
 	defer fileStore.Close()
-	allowedMediaTypes := []string{"ocidb.index"}
+	allowedMediaTypes := []string{"ocidb.db"}
 
 	err := pull(ctx, resolver, indexImageRef, fileStore, allowedMediaTypes)
 	if isNotInitializedErr(err) {
-		fmt.Printf("need to initialized")
-		return nil, nil
+		if err := initialize(ctx, connectOpts.Database, resolver, indexImageRef); err != nil {
+			return nil, errors.Wrap(err, "failed to initialize new db")
+		}
+
+		err = pull(ctx, resolver, indexImageRef, fileStore, allowedMediaTypes)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to pull newly initialized db")
+		}
+	} else if err != nil {
+		return nil, errors.Wrap(err, "failed to pull database")
 	}
 
 	return &connection, nil
@@ -47,6 +60,43 @@ func isNotInitializedErr(err error) bool {
 	}
 
 	return err.Error() == ErrNotInitialized.Error()
+}
+
+func initialize(ctx context.Context, databaseName string, resolver remotes.Resolver, ref string) error {
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(tmpDir)
+
+	localPath := filepath.Join(tmpDir, fmt.Sprintf("%s.db", databaseName))
+	db, err := sql.Open("sqlite3", localPath)
+	if err != nil {
+		return errors.Wrap(err, "failed to open")
+	}
+	sqlStmt := `create table ocidb (id integer not null primary key, name text);`
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		return errors.Wrap(err, "failed to create table")
+	}
+	db.Close()
+
+	data, err := ioutil.ReadFile(localPath)
+	if err != nil {
+		return errors.Wrap(err, "failed to read created sqlite file")
+	}
+
+	memoryStore := content.NewMemoryStore()
+	pushContents := []ocispec.Descriptor{
+		memoryStore.Add("database.db", "ocidb.db", data),
+	}
+	desc, err := oras.Push(ctx, resolver, ref, memoryStore, pushContents)
+	if err != nil {
+		return errors.Wrap(err, "failed to push created sqlite database")
+	}
+
+	fmt.Printf("%#v\n", desc)
+	return nil
 }
 
 func pull(ctx context.Context, resolver remotes.Resolver, ref string, ingester *content.FileStore, allowedMediaTypes []string) error {
