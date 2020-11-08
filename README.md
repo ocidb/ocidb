@@ -28,7 +28,7 @@ We don't want extra storage requirements or memory added.
 OCI DB should not require any additional (cluster-admin) access to the Kubernetes cluster.
 
 **Reasonably fast and efficient**
-Speed of queries and efficiency of bandwidth is not the primary design goal but a secondary one. The is our open question, can we make this usable? Every query (probably) cannot go back to an OCI registry and me performant.
+Speed of queries and efficiency of bandwidth is not the primary design goal but a secondary one. The is our open question, can we make this usable? Every query (probably) cannot go back to an OCI registry and be performant.
 
 **Transactions**
 There should be support for transactions across multiple tables.

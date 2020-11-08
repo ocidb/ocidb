@@ -3,9 +3,16 @@
 Each database will be a single image.
 Each table will be a new image tag.
 
+Internally, the database is a SQLite database.
+We chose this so that we can have an easy-to-use SQL langage, and not a key value store.
+
 Each write (insert/update) will be local and automatically create a transaction. 
 Caller must "commit" to push to the registry backing the database.
 
 Each instance of OCI DB will automatically "subscribe" to the registry for notification of updated tables (tags being overwritten), new tables (new tags), or deleted tables (deleted tags).
 Schema will be managed by SchemaHero initially, built into the library.
+
+The caller should not be responsible for the quorum or anything about scaling.
+This should be handled by the library automatically.
+The idea is to create a new tag that stores all known connections, and they can create locks and manage state using this "table".
 
