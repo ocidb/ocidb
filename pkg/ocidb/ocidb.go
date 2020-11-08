@@ -4,13 +4,17 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/deislabs/oras/pkg/content"
 	"github.com/deislabs/oras/pkg/oras"
 	"github.com/ocidb/ocidb/pkg/ocidb/types"
 	"github.com/pkg/errors"
 )
+
+var ErrNotInitialized = errors.New("not_initialized")
 
 // Connect is called by the application to create a connection to an existing
 // database. The registry details are reuqired, along with the database name.
@@ -26,16 +30,36 @@ func Connect(ctx context.Context, connectOpts *types.ConnectOpts) (*types.Connec
 
 	fileStore := content.NewFileStore(connection.LocalCacheDir)
 	defer fileStore.Close()
-	allowedMediaTypes := []string{"aaa"}
+	allowedMediaTypes := []string{"ocidb.index"}
 
-	desc, _, err := oras.Pull(ctx, resolver, indexImageRef, fileStore, oras.WithAllowedMediaTypes(allowedMediaTypes))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to pull index file")
+	err := pull(ctx, resolver, indexImageRef, fileStore, allowedMediaTypes)
+	if isNotInitializedErr(err) {
+		fmt.Printf("need to initialized")
+		return nil, nil
 	}
 
-	fmt.Printf("desc: %#v\n", desc)
-
 	return &connection, nil
+}
+
+func isNotInitializedErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return err.Error() == ErrNotInitialized.Error()
+}
+
+func pull(ctx context.Context, resolver remotes.Resolver, ref string, ingester *content.FileStore, allowedMediaTypes []string) error {
+	desc, _, err := oras.Pull(ctx, resolver, ref, ingester, oras.WithAllowedMediaTypes(allowedMediaTypes))
+	if err != nil {
+		if strings.HasSuffix(err.Error(), " not found") {
+			return ErrNotInitialized
+		}
+		return errors.Wrap(err, "failed to pull index file")
+	}
+
+	fmt.Printf("%#v\n", desc)
+	return nil
 }
 
 func imageRefFromConnectOpts(connectOpts *types.ConnectOpts) string {
