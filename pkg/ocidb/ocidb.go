@@ -17,6 +17,8 @@ import (
 	"github.com/ocidb/ocidb/pkg/ocidb/types"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	schemasv1alpha4 "github.com/schemahero/schemahero/pkg/apis/schemas/v1alpha4"
+	"github.com/schemahero/schemahero/pkg/database"
 )
 
 var ErrNotInitialized = errors.New("not_initialized")
@@ -39,7 +41,7 @@ func Connect(ctx context.Context, connectOpts *types.ConnectOpts) (*types.Connec
 
 	err := pull(ctx, resolver, indexImageRef, fileStore, allowedMediaTypes)
 	if isNotInitializedErr(err) {
-		if err := initialize(ctx, connectOpts.Database, resolver, indexImageRef); err != nil {
+		if err := initialize(ctx, connectOpts.Database, resolver, indexImageRef, connectOpts.Tables); err != nil {
 			return nil, errors.Wrap(err, "failed to initialize new db")
 		}
 
@@ -62,7 +64,7 @@ func isNotInitializedErr(err error) bool {
 	return err.Error() == ErrNotInitialized.Error()
 }
 
-func initialize(ctx context.Context, databaseName string, resolver remotes.Resolver, ref string) error {
+func initialize(ctx context.Context, databaseName string, resolver remotes.Resolver, ref string, tables []schemasv1alpha4.TableSpec) error {
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
@@ -74,12 +76,23 @@ func initialize(ctx context.Context, databaseName string, resolver remotes.Resol
 	if err != nil {
 		return errors.Wrap(err, "failed to open")
 	}
-	sqlStmt := `create table ocidb (id integer not null primary key, name text);`
-	_, err = db.Exec(sqlStmt)
-	if err != nil {
-		return errors.Wrap(err, "failed to create table")
-	}
 	db.Close()
+
+	// schemahero applies the schemas
+	schemaheroDatabase := database.Database{
+		Driver: "sqlite",
+		URI:    localPath,
+	}
+	for _, table := range tables {
+		statements, err := schemaheroDatabase.PlanSyncTableSpec(&table)
+		if err != nil {
+			return errors.Wrap(err, "failed to plan schema migration")
+		}
+
+		if err := schemaheroDatabase.ApplySync(statements); err != nil {
+			return errors.Wrap(err, "failed to apply statements")
+		}
+	}
 
 	data, err := ioutil.ReadFile(localPath)
 	if err != nil {

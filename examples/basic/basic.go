@@ -8,6 +8,7 @@ import (
 
 	ocidb "github.com/ocidb/ocidb/pkg/ocidb"
 	ocidbtypes "github.com/ocidb/ocidb/pkg/ocidb/types"
+	schemasv1alpha4 "github.com/schemahero/schemahero/pkg/apis/schemas/v1alpha4"
 )
 
 func main() {
@@ -21,6 +22,22 @@ func main() {
 		port = p
 	}
 
+	tables := []schemasv1alpha4.TableSpec{
+		{
+			Name: "testing",
+			Schema: &schemasv1alpha4.TableSchema{
+				SQLite: &schemasv1alpha4.SqliteTableSchema{
+					Columns: []*schemasv1alpha4.SqliteTableColumn{
+						{
+							Name: "test",
+							Type: "text",
+						},
+					},
+				},
+			},
+		},
+	}
+
 	connectOpts := ocidbtypes.ConnectOpts{
 		Host:      os.Getenv("OCIDB_HOST"),
 		Port:      port,
@@ -28,6 +45,7 @@ func main() {
 		Username:  os.Getenv("OCIDB_USERNAME"),
 		Password:  os.Getenv("OCIDB_PASSWORD"),
 		Database:  os.Getenv("OCIDB_DATABASE"),
+		Tables:    tables,
 	}
 
 	fmt.Printf("%#v\n", connectOpts)
