@@ -23,11 +23,45 @@ import (
 
 var ErrNotInitialized = errors.New("not_initialized")
 
+// Commit will push to the registry
+func Commit(ctx context.Context, connection *types.Connection) error {
+	// TODO set a lock on the database
+	connection.DB.Close()
+
+	data, err := ioutil.ReadFile(filepath.Join(connection.LocalCacheDir, "database.db"))
+	if err != nil {
+		return errors.Wrap(err, "failed to read file")
+	}
+
+	resolver := docker.NewResolver(docker.ResolverOptions{})
+	ref := fmt.Sprintf("%s:index", imageRefFromConnectOpts(connection.ConnectOpts))
+
+	memoryStore := content.NewMemoryStore()
+	pushContents := []ocispec.Descriptor{
+		memoryStore.Add("database.db", "ocidb.db", data),
+	}
+	desc, err := oras.Push(ctx, resolver, ref, memoryStore, pushContents)
+	if err != nil {
+		return errors.Wrap(err, "failed to push created sqlite database")
+	}
+
+	fmt.Printf("%#v\n", desc)
+
+	db, err := sql.Open("sqlite3", filepath.Join(connection.LocalCacheDir, "database.db"))
+	if err != nil {
+		return errors.Wrap(err, "failed to open")
+	}
+	connection.DB = db
+
+	return nil
+}
+
 // Connect is called by the application to create a connection to an existing
 // database. The registry details are reuqired, along with the database name.
 // All other parameters are optional as they have sane defaults.
 func Connect(ctx context.Context, connectOpts *types.ConnectOpts) (*types.Connection, error) {
 	connection := types.Connection{
+		ConnectOpts:   connectOpts,
 		LocalCacheDir: os.TempDir(),
 	}
 
@@ -39,19 +73,30 @@ func Connect(ctx context.Context, connectOpts *types.ConnectOpts) (*types.Connec
 	defer fileStore.Close()
 	allowedMediaTypes := []string{"ocidb.db"}
 
-	err := pull(ctx, resolver, indexImageRef, fileStore, allowedMediaTypes)
+	desc := &ocispec.Descriptor{}
+	var err error
+	desc, err = pull(ctx, resolver, indexImageRef, fileStore, allowedMediaTypes)
 	if isNotInitializedErr(err) {
 		if err := initialize(ctx, connectOpts.Database, resolver, indexImageRef, connectOpts.Tables); err != nil {
 			return nil, errors.Wrap(err, "failed to initialize new db")
 		}
 
-		err = pull(ctx, resolver, indexImageRef, fileStore, allowedMediaTypes)
+		desc, err = pull(ctx, resolver, indexImageRef, fileStore, allowedMediaTypes)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to pull newly initialized db")
 		}
 	} else if err != nil {
 		return nil, errors.Wrap(err, "failed to pull database")
 	}
+
+	fmt.Printf("%s\n", desc.Digest)
+
+	db, err := sql.Open("sqlite3", filepath.Join(connection.LocalCacheDir, "database.db"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open sqlite database")
+	}
+
+	connection.DB = db
 
 	return &connection, nil
 }
@@ -112,17 +157,16 @@ func initialize(ctx context.Context, databaseName string, resolver remotes.Resol
 	return nil
 }
 
-func pull(ctx context.Context, resolver remotes.Resolver, ref string, ingester *content.FileStore, allowedMediaTypes []string) error {
+func pull(ctx context.Context, resolver remotes.Resolver, ref string, ingester *content.FileStore, allowedMediaTypes []string) (*ocispec.Descriptor, error) {
 	desc, _, err := oras.Pull(ctx, resolver, ref, ingester, oras.WithAllowedMediaTypes(allowedMediaTypes))
 	if err != nil {
 		if strings.HasSuffix(err.Error(), " not found") {
-			return ErrNotInitialized
+			return nil, ErrNotInitialized
 		}
-		return errors.Wrap(err, "failed to pull index file")
+		return nil, errors.Wrap(err, "failed to pull index file")
 	}
 
-	fmt.Printf("%#v\n", desc)
-	return nil
+	return &desc, nil
 }
 
 func imageRefFromConnectOpts(connectOpts *types.ConnectOpts) string {

@@ -24,12 +24,16 @@ func main() {
 
 	tables := []schemasv1alpha4.TableSpec{
 		{
-			Name: "testing",
+			Name: "users",
 			Schema: &schemasv1alpha4.TableSchema{
 				SQLite: &schemasv1alpha4.SqliteTableSchema{
 					Columns: []*schemasv1alpha4.SqliteTableColumn{
 						{
-							Name: "test",
+							Name: "id",
+							Type: "int",
+						},
+						{
+							Name: "month",
 							Type: "text",
 						},
 					},
@@ -48,11 +52,32 @@ func main() {
 		Tables:    tables,
 	}
 
-	fmt.Printf("%#v\n", connectOpts)
 	connection, err := ocidb.Connect(context.TODO(), &connectOpts)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("%#v\b", connection)
+	if _, err := connection.DB.Exec("insert into users (id, month) values (?, ?)", 1, "oct"); err != nil {
+		panic(err)
+	}
+
+	if err := ocidb.Commit(context.TODO(), connection); err != nil {
+		panic(err)
+	}
+
+	rows, err := connection.DB.Query("select id, month from users")
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int
+		var month string
+		if err := rows.Scan(&id, &month); err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("%d = %s\n", id, month)
+	}
 }

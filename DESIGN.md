@@ -16,3 +16,6 @@ The caller should not be responsible for the quorum or anything about scaling.
 This should be handled by the library automatically.
 The idea is to create a new tag that stores all known connections, and they can create locks and manage state using this "table".
 
+Open questions:
+1. Should we leave a database as a single file, or split each table into a separate sqlite database and "attach" them at query time?
+2. How will we "subscribe" to know when the image is updated? Maybe we can HEAD or a quick GET to know on a _very_ frequent polling? Is there anything in the OCI spec for this?

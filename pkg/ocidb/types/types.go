@@ -1,6 +1,8 @@
 package types
 
 import (
+	"database/sql"
+
 	schemasv1alpha4 "github.com/schemahero/schemahero/pkg/apis/schemas/v1alpha4"
 )
 
@@ -19,5 +21,7 @@ type ConnectOpts struct {
 }
 
 type Connection struct {
+	ConnectOpts   *ConnectOpts
 	LocalCacheDir string
+	DB            *sql.DB
 }
