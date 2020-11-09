@@ -13,21 +13,21 @@ Any feedback is welcome!
 ## Supported Registries
 
 This project will support and OCI Artifact registry.
+
 Currently, this includes:
 
-
-```
 - [ ] DockerHub (waiting on https://github.com/docker/roadmap/issues/135)
 - [x] Amazon ECR
 - [x] Azure ACR
 - [x] Google Artifact Registry
 - [x] Docker Distribution
-- [?] GitLab Registry
-- [?] GitHub Container Registry
-- [?] Nexus Sonatype
-- [?] Artifactory
-```
 
+Unknown support (needs research):
+
+- [ ] GitLab Registry
+- [ ] GitHub Container Registry
+- [ ] Nexus Sonatype
+- [ ] Artifactory
 
 ## Design Goals
 
