@@ -4,7 +4,7 @@ This is an experimental project to create a relational database backed by an [OC
 
 ## Use Cases
 
-We built this to solve a specific problem. Our use case was an small (5-10 tables, each with < 20 rows), infrequently changed database that was included as part of an on-prem Kubernetes application. We had Postgres which was working fine, but very much overkill for the problem. We wanted to eliminate the Postgres requirement and create a path forward to scale ALL pods to > 1 replica. A high traffic service would move to a clou-native database solution such as CockroachDB or YugabyteDB, but that was the wrong direction for our use. We wanted to eliminate the database, not require more memory and disk and requirements. Overall size of our application mattered and we wanted to invest in solving this problem.
+We built this to solve a specific problem. Our use case was a small (5-10 tables, each with < 20 rows), infrequently changed database that was included as part of an on-prem Kubernetes application. We had Postgresql which was working fine, but very much overkill for the problem. We wanted to eliminate the Postgresql requirement and create a path forward to scale ALL pods to > 1 replica. A high traffic service would move to a clou-native database solution such as CockroachDB or YugabyteDB, but that was the wrong direction for our use. We wanted to eliminate the database, not require more memory and disk and requirements. Overall size of our application mattered and we wanted to invest in solving this problem.
 
 We are _not_ using ocidb in our product yet. This is very much experimental and built to explore this option.
 
