@@ -8,5 +8,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.4
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/errors v0.9.1
-	github.com/schemahero/schemahero v0.11.2-0.20201109032450-cc1ecafcf79c
+	github.com/schemahero/schemahero v0.11.2-0.20201205002054-607626aebdda
+	k8s.io/code-generator v0.18.3-beta.0 // indirect
+	sigs.k8s.io/controller-tools v0.2.8 // indirect
 )

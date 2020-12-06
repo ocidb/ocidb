@@ -414,6 +414,8 @@ github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/schemahero/schemahero v0.11.2-0.20201109032450-cc1ecafcf79c h1:/TOlak5r5SPQXa8Eau5Zb8vwo3zvz9lhSKYmGHRche8=
 github.com/schemahero/schemahero v0.11.2-0.20201109032450-cc1ecafcf79c/go.mod h1:v2/p+bcDD5/lX5FmHeB2Tcr23GeGZlgiEZ+BID3XZS0=
+github.com/schemahero/schemahero v0.11.2-0.20201205002054-607626aebdda h1:XlM5VDWCCGY7U+jOabhQ86soP2xBFrPwfAPsrl+8d7c=
+github.com/schemahero/schemahero v0.11.2-0.20201205002054-607626aebdda/go.mod h1:O+QevMDjhhbiZgb02g+1REdljT+Zr10GD8pLwnqy7fs=
 github.com/schemahero/schemahero v0.11.2 h1:5eSTv0LgVM+IgHDxVDk+GEswXWDkeZ+1W4lfoqogU5M=
 github.com/schemahero/schemahero v0.11.2/go.mod h1:YMUFz/GTctG6msxs54dGM+jwRQee/1IJWJdNMQPXNdc=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
