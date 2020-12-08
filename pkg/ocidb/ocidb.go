@@ -33,7 +33,9 @@ func Commit(ctx context.Context, connection *types.Connection) error {
 		return errors.Wrap(err, "failed to read file")
 	}
 
-	resolver := docker.NewResolver(docker.ResolverOptions{})
+	resolver := docker.NewResolver(docker.ResolverOptions{
+		PlainHTTP: connection.ConnectOpts.PlainHTTP,
+	})
 	ref := fmt.Sprintf("%s:index", imageRefFromConnectOpts(connection.ConnectOpts))
 
 	memoryStore := content.NewMemoryStore()
