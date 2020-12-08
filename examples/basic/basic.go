@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	ocidb "github.com/ocidb/ocidb/pkg/ocidb"
+	"github.com/ocidb/ocidb/pkg/ocidb"
 	ocidbtypes "github.com/ocidb/ocidb/pkg/ocidb/types"
 	schemasv1alpha4 "github.com/schemahero/schemahero/pkg/apis/schemas/v1alpha4"
 )

@@ -65,7 +65,9 @@ func Connect(ctx context.Context, connectOpts *types.ConnectOpts) (*types.Connec
 		LocalCacheDir: os.TempDir(),
 	}
 
-	resolver := docker.NewResolver(docker.ResolverOptions{})
+	resolver := docker.NewResolver(docker.ResolverOptions{
+		PlainHTTP: true,
+	})
 
 	indexImageRef := fmt.Sprintf("%s:index", imageRefFromConnectOpts(connectOpts))
 
