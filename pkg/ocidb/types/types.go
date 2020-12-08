@@ -9,6 +9,7 @@ import (
 type ConnectOpts struct {
 	Host      string
 	Port      int
+	PlainHTTP bool
 	Namespace string
 	Username  string
 	Password  string
